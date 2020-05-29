@@ -60,6 +60,7 @@ parser.add_argument('--initial-steps', default = 0, type = int,
 
 
 best_acc1 = 0
+best_acc5 = 0
 
 def main():
     args = parser.parse_args()
@@ -105,6 +106,7 @@ class CNNModule(nn.Module):
 
 def main_worker(gpu, ngpus_per_node, args):
     global best_acc1
+    global best_acc5
     args.gpu = gpu
     args.rank = gpu
     dist.init_process_group(backend=args.dist_backend, 
@@ -144,11 +146,12 @@ def main_worker(gpu, ngpus_per_node, args):
         avg_training_time += train(train_loader, model, criterion, optimizer, epoch, args)
 
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args)
+        acc1,acc5 = validate(val_loader, model, criterion, args)
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
+        best_acc5 = max(acc5, best_acc5)
 
         if args.rank % ngpus_per_node == 0:
             save_checkpoint({
@@ -157,8 +160,10 @@ def main_worker(gpu, ngpus_per_node, args):
                 'best_acc1': best_acc1,
                 'optimizer' : optimizer.state_dict(),
             }, is_best)
-    print('avg training time:', avg_training_time,'per iteration')
-
+    
+    print('GPU', args.gpu, 'avg training time: {a:.3f}'.format(a = 1000 * avg_training_time / args.epochs),'ms per iteration')
+    if args.gpu == 0:
+        print('Best top1 accuracy', best_acc1, 'Best top5 accuracy', best_acc5)
 
 def average_weight(model, world_size):
     for param in model.parameters():
@@ -252,9 +257,10 @@ def validate(val_loader, model, criterion, args):
             end = time.time()
             
         # TODO: this should also be done with the ProgressMeter
-        print('GPU{gpu:d}  Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'.format(gpu = args.gpu, top1=top1, top5=top5))
-
-    return top1.avg
+        if args.gpu == 0:
+            print('*Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'.format(gpu = args.gpu, top1=top1, top5=top5))
+            print(' ')
+    return top1.avg, top5.avg
 
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
     torch.save(state, filename)

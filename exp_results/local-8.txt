@@ -1,0 +1,89 @@
+Start training
+Local-steps = 8 |#GPU = 2 |#Epochs= 20
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+Files already downloaded and verified
+GPU 1 epoch 0 Average Training time: 0.008026307942915936
+GPU 0 epoch 0 Average Training time: 0.0077603763463545816
+*Acc@1 41.000 Acc@5 89.850
+ 
+GPU 1 epoch 1 Average Training time: 0.00313714937287934
+GPU 0 epoch 1 Average Training time: 0.0033201259009692135
+*Acc@1 49.110 Acc@5 92.560
+ 
+GPU 0 epoch 2 Average Training time: 0.0034757694419549436
+GPU 1 epoch 2 Average Training time: 0.0029395964680885784
+*Acc@1 53.940 Acc@5 94.030
+ 
+GPU 0 epoch 3 Average Training time: 0.003198296439890959
+GPU 1 epoch 3 Average Training time: 0.0035692173607495365
+*Acc@1 56.960 Acc@5 94.640
+ 
+GPU 1 epoch 4 Average Training time: 0.0030699323634712063
+GPU 0 epoch 4 Average Training time: 0.0032080375418371086
+*Acc@1 58.720 Acc@5 94.790
+ 
+GPU 1 epoch 5 Average Training time: 0.003282447250521913
+GPU 0 epoch 5 Average Training time: 0.0031662863128039303
+*Acc@1 61.140 Acc@5 94.950
+ 
+GPU 1 epoch 6 Average Training time: 0.0030676175136955417
+GPU 0 epoch 6 Average Training time: 0.0031549504825047086
+*Acc@1 60.630 Acc@5 94.890
+ 
+GPU 1 epoch 7 Average Training time: 0.003139426513594024
+GPU 0 epoch 7 Average Training time: 0.002959537262819251
+*Acc@1 60.900 Acc@5 94.770
+ 
+GPU 1 epoch 8 Average Training time: 0.003148738218813526
+GPU 0 epoch 8 Average Training time: 0.003059478438630396
+*Acc@1 60.470 Acc@5 94.390
+ 
+GPU 1 epoch 9 Average Training time: 0.0028235742024012972
+GPU 0 epoch 9 Average Training time: 0.0030428134665197257
+*Acc@1 61.330 Acc@5 94.670
+ 
+GPU 1 epoch 10 Average Training time: 0.003231102106522541
+GPU 0 epoch 10 Average Training time: 0.0029736672128949848
+*Acc@1 60.770 Acc@5 94.780
+ 
+GPU 0 epoch 11 Average Training time: 0.0029282411750482054
+GPU 1 epoch 11 Average Training time: 0.0034281270844595773
+*Acc@1 60.930 Acc@5 94.240
+ 
+GPU 0 epoch 12 Average Training time: 0.003013480682762302
+GPU 1 epoch 12 Average Training time: 0.0029800035515610054
+*Acc@1 59.900 Acc@5 94.650
+ 
+GPU 0 epoch 13 Average Training time: 0.003026968362380047
+GPU 1 epoch 13 Average Training time: 0.0030361681568379303
+*Acc@1 61.320 Acc@5 94.510
+ 
+GPU 1 epoch 14 Average Training time: 0.0028662377474259356
+GPU 0 epoch 14 Average Training time: 0.0029190535448035417
+*Acc@1 61.480 Acc@5 94.240
+ 
+GPU 0 epoch 15 Average Training time: 0.003035314229069924
+GPU 1 epoch 15 Average Training time: 0.00349599974496024
+*Acc@1 60.020 Acc@5 93.910
+ 
+GPU 0 epoch 16 Average Training time: 0.003149895035490698
+GPU 1 epoch 16 Average Training time: 0.0032364421961258868
+*Acc@1 61.450 Acc@5 94.470
+ 
+GPU 1 epoch 17 Average Training time: 0.0031804831660523706
+GPU 0 epoch 17 Average Training time: 0.0030125707996134857
+*Acc@1 60.670 Acc@5 93.580
+ 
+GPU 1 epoch 18 Average Training time: 0.002908058312474465
+GPU 0 epoch 18 Average Training time: 0.0030986642350955885
+*Acc@1 61.570 Acc@5 94.280
+ 
+GPU 1 epoch 19 Average Training time: 0.003072840826851981
+GPU 0 epoch 19 Average Training time: 0.0029656947875509455
+GPU 1 avg training time: 3.382 ms per iteration
+*Acc@1 61.700 Acc@5 93.980
+ 
+GPU 0 avg training time: 3.323 ms per iteration
+Best top1 accuracy tensor(61.7000, device='cuda:0') Best top5 accuracy tensor(94.9500, device='cuda:0')
