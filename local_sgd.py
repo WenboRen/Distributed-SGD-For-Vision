@@ -63,7 +63,7 @@ best_acc1 = 0
 
 def main():
     args = parser.parse_args()
-
+       
     if args.seed is not None:
         random.seed(args.seed)
         torch.manual_seed(args.seed)
@@ -76,6 +76,10 @@ def main():
 
     ngpus_per_node = torch.cuda.device_count()
     args.world_size = ngpus_per_node
+    
+    print('Start training')
+    print('Local-steps =', args.local_steps, '|#GPU =', args.world_size, '|#Epochs=', args.epochs)
+
     # Use torch.multiprocessing.spawn to launch distributed processes: the main_worker process function
     mp.spawn(main_worker, nprocs=ngpus_per_node, args=(ngpus_per_node, args))
 
@@ -129,7 +133,8 @@ def main_worker(gpu, ngpus_per_node, args):
             shuffle=False,
             num_workers=args.workers, 
             pin_memory=True)
-    
+   
+    average_weight(model, args.world_size)
     avg_training_time = 0
     for epoch in range(args.epochs):
         train_sampler.set_epoch(epoch)
@@ -172,8 +177,6 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         [training_time, data_time, losses, top1, top5],
         prefix="Epoch: [{}]".format(epoch))
 
-    average_weight(model, args.world_size)
-
     # switch to train mode
     model.train()
 
@@ -194,7 +197,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         loss.backward()
         optimizer.step()
 
-        if i % args.local_steps == 0:
+        if (i - 1)  % args.local_steps == 0:
             average_weight(model, args.world_size)
 
         # measure training time
@@ -210,6 +213,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             progress.display(i)
 
         data_end = time.time()
+    average_weight(model, args.world_size)
     print('GPU', args.gpu, 'epoch', epoch, 'Average Training time:', training_time.avg)
     return training_time.avg
 
