@@ -1,1 +1,1 @@
-# Large-Batchsize-Distributed-SGD
+# Distributed SGD for Computer Vision
