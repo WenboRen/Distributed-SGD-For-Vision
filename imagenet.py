@@ -18,18 +18,18 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
+from distributed_optimization import get_distributed_optimizer
+
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
     and callable(models.__dict__[name]))
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-parser.add_argument('data', metavar='DIR',
-                    help='path to dataset')
+parser.add_argument('data', metavar='DIR', help='path to dataset')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     choices=model_names,
-                    help='model architecture: ' +
-                        ' | '.join(model_names) +
-                        ' (default: resnet18)')
+                    help='model architecture: ' + ' | '.join(model_names)
+                     + ' (default: resnet18)')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 4)')
 parser.add_argument('--epochs', default=90, type=int, metavar='N',
@@ -73,8 +73,21 @@ parser.add_argument('--multiprocessing-distributed', action='store_true',
                          'N processes per node, which has N GPUs. This is the '
                          'fastest way to use PyTorch for either single node or '
                          'multi node data parallel training')
+parser.add_argument('--local-sgd', action='store_true',
+                    help='Use local SGD, and will disable auto grad all_reduce')
+parser.add_argument('--local-steps', default=8, type=int,
+                    help='number of local steps per model average')
+parser.add_argument('--initial-steps', default=0, type=int,
+                    help='number of initial small batchsize steps')
+parser.add_argument('--initial-step-method', default='single_process', type=str,
+                    help='methods to perform initial steps. 1: \'multiple_processes\':'
+                        'perform it on all processes and average for each step.'
+                        '2: \'single_process\': perform it on one process and broadcast'
+                        'its model after initial steps')
 
 best_acc1 = 0
+
+from distributed_optimization import get_distributed_optimizer
 
 
 def main():
@@ -125,6 +138,8 @@ def main_worker(gpu, ngpus_per_node, args):
         if args.multiprocessing_distributed:
             # For multiprocessing distributed training, rank needs to be the
             # global rank among all the processes
+            args.group = list(range(args.rank * ngpus_per_node,
+                (args.rank + 1) * ngpus_per_node))
             args.rank = args.rank * ngpus_per_node + gpu
         dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
                                 world_size=args.world_size, rank=args.rank)
@@ -148,7 +163,8 @@ def main_worker(gpu, ngpus_per_node, args):
             # ourselves based on the total number of GPUs we have
             args.batch_size = int(args.batch_size / ngpus_per_node)
             args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+            if not args.local_sgd:
+                model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         else:
             model.cuda()
             # DistributedDataParallel will divide and allocate batch_size to all
@@ -168,9 +184,22 @@ def main_worker(gpu, ngpus_per_node, args):
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda(args.gpu)
 
-    optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay)
+    if args.local_sgd:
+        arg_dict = {
+            'local_steps': args.local_steps,
+            'initial_steps': args.initial_steps,
+            'initial_step_method': args.initial_step_method,
+        }
+        local_optimizer = torch.optim.SGD(model.parameters(), args.lr,
+            momentum=args.momentum, weight_decay=args.weight_decay)
+        optimizer = get_distributed_optimizer(
+            'local_sgd', local_optimizer, args.rank, args.world_size,
+            args.group, arg_dict
+        )
+    else:
+        optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                    momentum=args.momentum,
+                                    weight_decay=args.weight_decay)
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -237,7 +266,10 @@ def main_worker(gpu, ngpus_per_node, args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        adjust_learning_rate(optimizer, epoch, args)
+        if args.local_sgd:
+            adjust_learning_rate(optimizer.local_optimizer, epoch, args)
+        else:
+            adjust_learning_rate(optimizer, epoch, args)
 
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, args)
@@ -294,7 +326,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
         top5.update(acc5[0], images.size(0))
 
         # compute gradient and do SGD step
-        optimizer.zero_grad()
+        if args.local_sgd:
+            optimizer.local_optimizer.zero_grad()
+        else:
+            optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
@@ -423,3 +458,4 @@ def accuracy(output, target, topk=(1,)):
 
 if __name__ == '__main__':
     main()
+
