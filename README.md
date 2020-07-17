@@ -44,18 +44,17 @@ First, add arguments t= arg_dic. Second, use a local_optimizer (type torch.optim
 
 ### Sample code: 
     
-    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
-    arg_dict = {
-        'local_steps': args.local_steps,
-        'initial_steps': args.initial_steps,
-        'initial_step_method': args.initial_step_method,
-    }
     local_optimizer = torch.optim.SGD(
         model.parameters(), 
         args.lr,
         momentum=args.momentum, 
         weight_decay=args.weight_decay
     )
+    arg_dict = {
+        'local_steps': args.local_steps,
+        'initial_steps': args.initial_steps,
+        'initial_step_method': args.initial_step_method,
+    }
     optimizer = get_distributed_optimizer(
         'local_sgd', 
         local_optimizer, 
@@ -64,7 +63,8 @@ First, add arguments t= arg_dic. Second, use a local_optimizer (type torch.optim
         args.group, 
         arg_dict
     )
-    
+        
+    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
     for steps:
         output = model(images)
         loss = criterion(output, target)
